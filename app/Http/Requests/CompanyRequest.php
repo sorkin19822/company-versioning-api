@@ -30,7 +30,7 @@ class CompanyRequest extends FormRequest
             // No unique rule: endpoint is upsert (update or create by edrpou).
             // Uniqueness is enforced at the DB level by a unique index on companies.edrpou.
             'edrpou'  => ['required', 'digits_between:1,10'],
-            'address' => ['required', 'string'],
+            'address' => ['required', 'string', 'max:1000'],
         ];
     }
 

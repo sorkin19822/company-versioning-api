@@ -109,6 +109,12 @@ trait HasVersions
 
             $nextVersion = (int) $currentMax + 1;
 
+            if ($nextVersion > 65535) {
+                throw new \OverflowException(
+                    static::class . ' (id=' . $this->getKey() . ') has reached the maximum version limit of 65535.'
+                );
+            }
+
             $snapshot = [];
             foreach ($this->getVersionableFields() as $field) {
                 $snapshot[$field] = $this->getAttribute($field);
