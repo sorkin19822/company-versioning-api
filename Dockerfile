@@ -1,0 +1,33 @@
+FROM php:8.3-fpm
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git curl libpng-dev libonig-dev libxml2-dev zip unzip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www
+
+# Copy composer files first for better layer caching
+COPY composer.json composer.lock ./
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+
+# Copy the rest of the application
+COPY . .
+
+# Run post-install scripts now that full app is present
+RUN composer run-script post-autoload-dump --no-interaction
+
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 9000
+
+ENTRYPOINT ["/entrypoint.sh"]
