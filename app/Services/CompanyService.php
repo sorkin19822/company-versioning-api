@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Company;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
@@ -25,9 +26,16 @@ class CompanyService
                 ->first();
 
             if ($company === null) {
-                $company = Company::create($data);
+                try {
+                    $company = Company::create($data);
 
-                return $this->result('created', $company);
+                    return $this->result('created', $company);
+                } catch (UniqueConstraintViolationException) {
+                    // Two concurrent requests both saw null and raced to insert.
+                    // The unique index on edrpou caught the collision — re-fetch
+                    // the winner's record and fall through to update/duplicate logic.
+                    $company = Company::where('edrpou', $data['edrpou'])->firstOrFail();
+                }
             }
 
             $fields   = $company->getVersionableFields();
