@@ -91,6 +91,45 @@ class CompanyApiTest extends TestCase
         $response->assertJson(['status' => 'duplicate', 'version' => 1]);
     }
 
+    public function test_normalizefields_treats_db_trailing_spaces_as_duplicate(): void
+    {
+        // Insert company with trailing spaces directly (bypassing the form request trim)
+        // to simulate legacy data stored before whitespace trimming was introduced.
+        Company::create([
+            'name'    => 'ТОВ Українська енергетична біржа   ',
+            'edrpou'  => '37027819',
+            'address' => '01001, Україна, м. Київ, вул. Хрещатик, 44   ',
+        ]);
+
+        // Incoming request has clean (trimmed) values — normalizeFields() trims both sides,
+        // so this should be treated as a duplicate, not an update.
+        $response = $this->postJson('/api/company', $this->payload);
+
+        $response->assertJson(['status' => 'duplicate', 'version' => 1]);
+        $this->assertSame(1, CompanyVersion::where('edrpou', '37027819')->count());
+    }
+
+    public function test_validation_passes_at_min_boundary(): void
+    {
+        // name: min:2 — exactly 2 characters must pass
+        $response = $this->postJson('/api/company', array_merge($this->payload, ['name' => 'АБ']));
+        $response->assertStatus(201);
+    }
+
+    public function test_validation_passes_at_max_boundaries(): void
+    {
+        // name: max:256 — exactly 256 characters must pass
+        $this->postJson('/api/company', array_merge($this->payload, [
+            'name'   => str_repeat('a', 256),
+            'edrpou' => '11111111',
+        ]))->assertStatus(201);
+
+        // edrpou: digits_between:1,10 — exactly 10 digits must pass
+        $this->postJson('/api/company', array_merge($this->payload, [
+            'edrpou' => '1234567890',
+        ]))->assertStatus(201); // new company — never existed before
+    }
+
     public function test_version_snapshot_stores_correct_data(): void
     {
         $this->postJson('/api/company', $this->payload);
