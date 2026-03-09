@@ -8,6 +8,9 @@ use Illuminate\Support\Str;
 
 trait HasVersions
 {
+    /** Cached version number written by the last saveVersion() call on this instance. */
+    private int $cachedVersion = 0;
+
     /**
      * Boot the trait — automatically called by Eloquent via bootHasVersions() convention.
      * Registers created/updated event listeners to snapshot model state.
@@ -116,15 +119,23 @@ trait HasVersions
                 $snapshot,
                 ['created_at' => now()]
             ));
+
+            $this->cachedVersion = $nextVersion;
         });
     }
 
     /**
      * Returns the current (latest) version number for this record.
+     * Uses the cached value written by saveVersion() to avoid an extra DB query.
+     * Falls back to a DB query if saveVersion() has not been called on this instance.
      * Returns 0 if no versions exist yet (sentinel value — version numbering starts at 1).
      */
     public function getCurrentVersion(): int
     {
+        if ($this->cachedVersion > 0) {
+            return $this->cachedVersion;
+        }
+
         return (int) DB::table($this->getVersionTable())
             ->where($this->getVersionForeignKey(), $this->getKey())
             ->max('version');
