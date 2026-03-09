@@ -16,11 +16,11 @@ class CompanyRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        $this->merge([
-            'name'    => is_string($this->name)    ? trim($this->name)    : $this->name,
-            'edrpou'  => is_string($this->edrpou)  ? trim($this->edrpou)  : $this->edrpou,
-            'address' => is_string($this->address) ? trim($this->address) : $this->address,
-        ]);
+        $this->merge(
+            collect($this->only(['name', 'edrpou', 'address']))
+                ->map(fn ($value) => is_string($value) ? trim($value) : $value)
+                ->all()
+        );
     }
 
     public function rules(): array
