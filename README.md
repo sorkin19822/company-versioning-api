@@ -1,59 +1,156 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Company Versioning API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+REST API for storing and versioning company data.
+Every change to the `name` or `address` fields automatically creates a new snapshot (version).
 
-## About Laravel
+## Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Component | Version  |
+|-----------|----------|
+| PHP       | 8.4      |
+| Laravel   | 12       |
+| MySQL     | 8.0      |
+| Nginx     | alpine   |
+| Docker    | compose  |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Deployment
 
-## Learning Laravel
+### 1. Clone the repository
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+git clone <repo-url>
+cd company-versioning-api
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 2. Create `.env`
 
-## Laravel Sponsors
+```bash
+cp .env.example .env
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+> Default values in `.env.example` are already configured for Docker.
+> Change only if needed (port, passwords, etc.).
 
-### Premium Partners
+### 3. Start containers
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```bash
+docker compose up -d
+```
 
-## Contributing
+The entrypoint automatically runs:
+- `php artisan key:generate`
+- `php artisan migrate`
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+The service is available at **http://localhost:8080**.
 
-## Code of Conduct
+### 4. Seed the database with sample data (optional)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+docker compose exec app php artisan db:seed
+```
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Tests
 
-## License
+```bash
+docker compose exec app php artisan test
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```
+Tests: 26 passed (81 assertions)
+```
+
+---
+
+## API
+
+Full specification — [`openapi.yaml`](openapi.yaml)
+(import into Postman: **Import → OpenAPI**)
+
+### POST /api/company
+
+Create or update a company by `edrpou`.
+
+**Request**
+```json
+{
+  "name":    "Acme Corporation",
+  "edrpou":  "37027819",
+  "address": "123 Main St, New York, NY 10001"
+}
+```
+
+**Responses**
+
+| HTTP | `status`    | Description                              |
+|------|-------------|------------------------------------------|
+| 201  | `created`   | Company created (version 1)              |
+| 200  | `updated`   | Data changed, version incremented        |
+| 200  | `duplicate` | Data unchanged, same version returned    |
+| 422  |             | Validation error                         |
+
+```json
+{ "status": "created", "company_id": 1, "version": 1 }
+```
+
+### GET /api/company/{edrpou}/versions
+
+Retrieve all versions of a company.
+
+| HTTP | Description                                     |
+|------|-------------------------------------------------|
+| 200  | Array of versions                               |
+| 404  | Company not found or edrpou is invalid          |
+
+```json
+{
+  "company_id": 1,
+  "edrpou": "37027819",
+  "versions": [
+    {
+      "id": 1,
+      "version": 1,
+      "name": "Acme Corporation",
+      "edrpou": "37027819",
+      "address": "123 Main St, New York, NY 10001",
+      "created_at": "2026-03-09T10:00:00.000000Z"
+    }
+  ]
+}
+```
+
+---
+
+## Field Validation
+
+| Field     | Rules                                  |
+|-----------|----------------------------------------|
+| `name`    | required, string, min:2, max:256       |
+| `edrpou`  | required, digits only, 1–10 digits     |
+| `address` | required, string                       |
+
+---
+
+## Versioning Architecture
+
+Versioning logic is encapsulated in the `HasVersions` trait and is not tied to the `Company` model.
+To enable versioning on any model:
+
+```php
+use App\Traits\HasVersions;
+
+class MyModel extends Model
+{
+    use HasVersions;
+
+    protected $fillable = ['field1', 'field2'];
+}
+```
+
+The trait automatically:
+- creates a version snapshot on `created`
+- creates a new version on `updated` (only when `$fillable` fields change)
+- is protected against race conditions via `DB::transaction()` + `lockForUpdate()`
