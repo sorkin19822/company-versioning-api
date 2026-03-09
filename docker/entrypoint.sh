@@ -22,4 +22,8 @@ fi
 
 php artisan migrate --force --no-interaction
 
+# Fix storage permissions after volume mount (host uid != www-data)
+chmod -R 775 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache
+
 exec php-fpm
