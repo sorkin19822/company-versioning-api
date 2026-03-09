@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('company_versions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
-            $table->unsignedInteger('version');
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete()->restrictOnUpdate();
+            $table->unsignedSmallInteger('version');
             $table->string('name', 256);
             $table->string('edrpou', 10);
             $table->text('address');
