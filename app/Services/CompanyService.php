@@ -53,6 +53,25 @@ class CompanyService
     }
 
     /**
+     * Returns all versions for a company identified by edrpou.
+     * Throws ModelNotFoundException (→ 404) if edrpou does not exist.
+     */
+    public function getVersions(string $edrpou): array
+    {
+        $company = Company::where('edrpou', $edrpou)->firstOrFail();
+
+        $versions = $company->versions()
+            ->orderBy('version')
+            ->get(['id', 'version', 'name', 'edrpou', 'address', 'created_at']);
+
+        return [
+            'company_id' => $company->id,
+            'edrpou'     => $company->edrpou,
+            'versions'   => $versions,
+        ];
+    }
+
+    /**
      * Normalizes field values for reliable comparison:
      * casts all values to string and trims whitespace.
      */
