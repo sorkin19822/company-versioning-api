@@ -13,7 +13,7 @@ services:
     networks:
       - company_net
     command: >
-      sh -c "php artisan key:generate --no-interaction --force &&
+      sh -c "export APP_KEY=$$(php artisan key:generate --show --no-interaction) &&
              php artisan migrate --force --no-interaction &&
              chmod -R 775 storage bootstrap/cache &&
              chown -R www-data:www-data storage bootstrap/cache &&
