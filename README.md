@@ -15,6 +15,11 @@ Every change to the `name` or `address` fields automatically creates a new snaps
 
 ---
 
+## Requirements
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) with Docker Compose
+- On Windows: WSL2 must be enabled in Docker Desktop settings
+
 ## Deployment
 
 ### 1. Clone the repository
