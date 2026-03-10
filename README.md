@@ -67,6 +67,18 @@ docker compose exec app php artisan test
 Tests: 26 passed (81 assertions)
 ```
 
+**Feature tests** (`CompanyApiTest`) — 22 tests:
+- `POST /api/company` — created / updated / duplicate logic
+- Sequential version increment across multiple updates
+- Whitespace trimming does not trigger false updates
+- Version snapshot stores correct data in `company_versions`
+- Validation: all required fields, min/max boundaries, digits-only edrpou
+- `GET /api/company/{edrpou}/versions` — returns ordered versions, 404 for unknown/invalid edrpou
+
+**Unit tests** (`HasVersionsTest`) — 4 tests:
+- `HasVersions` trait convention: table name, foreign key, versionable fields
+- Throws `LogicException` when `$fillable` is empty
+
 ---
 
 ## API
