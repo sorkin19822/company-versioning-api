@@ -23,11 +23,6 @@ COPY . .
 # Run post-install scripts now that full app is present
 RUN composer run-script post-autoload-dump --no-interaction
 
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
-
-COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 EXPOSE 9000
 
-ENTRYPOINT ["/entrypoint.sh"]
+CMD ["php-fpm"]

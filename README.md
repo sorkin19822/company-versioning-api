@@ -30,8 +30,11 @@ cd company-versioning-api
 cp .env.example .env
 ```
 
-> Default values in `.env.example` are already configured for Docker.
-> Change only if needed (port, passwords, etc.).
+Set your own passwords in `.env`:
+```
+DB_PASSWORD=your_password
+DB_ROOT_PASSWORD=your_root_password
+```
 
 ### 3. Start containers
 
@@ -39,9 +42,10 @@ cp .env.example .env
 docker compose up -d
 ```
 
-The entrypoint automatically runs:
-- `php artisan key:generate`
-- `php artisan migrate`
+On first start Docker automatically:
+- generates `APP_KEY`
+- runs `php artisan migrate` (creates tables)
+- fixes storage directory permissions
 
 The service is available at **http://localhost:8080**.
 
@@ -130,7 +134,7 @@ Retrieve all versions of a company.
 |-----------|----------------------------------------|
 | `name`    | required, string, min:2, max:256       |
 | `edrpou`  | required, digits only, 1–10 digits     |
-| `address` | required, string                       |
+| `address` | required, string, max:1000             |
 
 ---
 

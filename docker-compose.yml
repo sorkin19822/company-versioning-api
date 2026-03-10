@@ -12,6 +12,12 @@ services:
       - .env
     networks:
       - company_net
+    command: >
+      sh -c "php artisan key:generate --no-interaction --force &&
+             php artisan migrate --force --no-interaction &&
+             chmod -R 775 storage bootstrap/cache &&
+             chown -R www-data:www-data storage bootstrap/cache &&
+             php-fpm"
     depends_on:
       mysql:
         condition: service_healthy
