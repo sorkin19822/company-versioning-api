@@ -35,12 +35,6 @@ cd company-versioning-api
 cp .env.example .env
 ```
 
-Set your own passwords in `.env`:
-```
-DB_PASSWORD=your_password
-DB_ROOT_PASSWORD=your_root_password
-```
-
 ### 3. Start containers
 
 ```bash
